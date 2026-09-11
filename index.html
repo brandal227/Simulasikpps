@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabungan DPT & Model C1 PPWP</title>
+    <!-- SheetJS for Excel processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333333;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .tab-content {
+            display: none;
+            flex-grow: 1;
+            overflow: auto;
+            padding: 3px 6px;
+            box-sizing: border-box;
+        }
+
+        .tab-content.active {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            height: calc(100vh - 36px);
+        }
+
+        /* Bottom Tab Navigation Bar */
+        .bottom-nav {
+            position: relative;
+            bottom: auto;
+            left: auto;
+            width: 100%;
+            height: 36px;
+            background-color: #333;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+            z-index: 9999;
+            flex-shrink: 0;
+        }
+
+        .nav-tab {
+            flex: 1;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-top: 2px solid transparent;
+        }
+
+        .nav-tab:hover {
+            background-color: #444;
+        }
+
+        .nav-tab.active {
+            background-color: #222;
+            color: #4CAF50;
+            border-top: 2px solid #4CAF50;
+        }
+
+        :root {
+            --primary-color: #333333;
+            --border-color: #cccccc;
+            --header-bg: #e0e0e0;
+            --highlight-green: #92d050;
+            --hover-bg: #f9f9f9;
+            --btn-blue: #007bff;
+            --btn-blue-hover: #0056b3;
+            --btn-red: #dc3545;
+            --btn-red-hover: #c82333;
+            --btn-green: #28a745;
+            --btn-green-hover: #218838;
+        }
+
+        .dpt-wrapper {
+            width: 100%;
+            max-width: none;
+            background: #ffffff;
+            padding: 4px 6px;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        .dpt-wrapper h1 {
+            font-size: 13px;
+            margin-top: 0;
+            margin-bottom: 2px;
+            text-align: center;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .summary-matrix-container {
+            margin-bottom: 3px;
+            flex-shrink: 0;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+        }
+
+        .summary-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: center;
+            background: #fafafa;
+        }
+
+        .summary-matrix th, .summary-matrix td {
+            border: 1px solid var(--border-color);
+            padding: 2px 4px;
+        }
+
+        .summary-matrix th {
+            background-color: var(--header-bg);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .summary-matrix .row-label {
+            text-align: left;
+            font-weight: bold;
+            background-color: #f1f1f1;
+        }
+
+        .summary-matrix .total-col {
+            font-weight: bold;
+            background-color: #e9ecef;
+        }
+
+        .summary-matrix .row-sudah, .summary-matrix .row-sudah td {
+            background-color: #d4edda !important;
+        }
+        .summary-matrix .row-sudah .row-label {
+            background-color: #c3e6cb !important;
+        }
+        .summary-matrix .row-sudah .total-col {
+            background-color: #b1dfbb !important;
+        }
+
+        .summary-matrix .row-belum, .summary-matrix .row-belum td {
+            background-color: #f8d7da !important;
+        }
+        .summary-matrix .row-belum .row-label {
+            background-color: #f5c6cb !important;
+        }
+        .summary-matrix .row-belum .total-col {
+            background-color: #f1b0b7 !important;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-bottom: 3px;
+            background: #fafafa;
+            padding: 3px 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .search-container {
+            display: flex;
+            border: 1px solid var(--border-color);
+            background-color: #ffffff;
+            border-radius: 2px;
+        }
+
+        .search-label {
+            background-color: var(--header-bg);
+            padding: 2px 5px;
+            font-weight: bold;
+            font-size: 10px;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            border: none;
+            padding: 2px 5px;
+            outline: none;
+            font-size: 11px;
+            width: 150px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            color: #fff;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--btn-blue); }
+        .btn-primary:hover { background-color: var(--btn-blue-hover); }
+
+        .btn-danger { background-color: var(--btn-red); }
+        .btn-danger:hover { background-color: var(--btn-red-hover); }
+
+        .btn-success { background-color: var(--btn-green); }
+        .btn-success:hover { background-color: var(--btn-green-hover); }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            overflow-y: auto;
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+        }
+
+        table.main-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: left;
+        }
+
+        .main-table th, .main-table td {
+            border: 1px solid var(--border-color);
+            padding: 2px 4px;
+        }
+
+        .main-table th {
+            background-color: var(--header-bg);
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .col-no { width: 5%; text-align: center; }
+        .col-nama { width: 43%; }
+        .col-jk { width: 10%; text-align: center; }
+        .col-usia { width: 7%; text-align: center; }
+        .col-rt { width: 7%; text-align: center; }
+        .col-rw { width: 7%; text-align: center; }
+        .col-status { width: 14%; text-align: center; }
+
+        tr.highlight {
+            background-color: var(--highlight-green) !important;
+        }
+
+        tr:hover:not(.highlight) {
+            background-color: var(--hover-bg);
+        }
+
+        .status-checkbox {
+            width: 13px;
+            height: 13px;
+            cursor: pointer;
+            accent-color: #28a745;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 12px;
+            color: #777;
+            font-style: italic;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            background: #fff;
+            padding: 12px 18px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 340px;
+            width: 90%;
+            text-align: center;
+        }
+        .modal-text {
+            font-size: 12px;
+            margin-bottom: 12px;
+            color: #333;
+            text-align: left;
+        }
+        .modal-btn {
+            background-color: var(--btn-blue);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            font-size: 11px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-btn-danger {
+            background-color: var(--btn-red);
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .c1-wrapper {
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            max-width: none;
+        }
+        .election-table th, .election-table td {
+            border: 1px solid #000;
+        }
+        .digit-box-input {
+            background-color: #ffffff;
+            border: 1px solid #000;
+            text-align: center;
+            font-weight: 700;
+            width: 100%;
+            padding: 2px;
+            outline: none;
+            font-size: 11px;
+        }
+        .digit-box-input:focus {
+            background-color: #e6f4ea;
+            border-color: #1a73e8;
+        }
+        .digit-box-readonly {
+            background-color: #f1f5f9;
+            border: 1px solid #000;
+            text-align: center;
+            font-weight: 700;
+            width: 100%;
+            padding: 2px;
+        }
+        @media print {
+            .bottom-nav, .no-print {
+                display: none !important;
+            }
+            .tab-content {
+                display: block !important;
+                height: auto !important;
+            }
+            body {
+                background: white;
+                padding: 0;
+                overflow: auto;
+            }
+            .digit-box-input {
+                border: none;
+                background: transparent;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tab-dpt" class="tab-content active">
+        <div class="dpt-wrapper">
+            <h1>Data Pemilih Tetap (DPT)</h1>
+
+            <!-- Panel Informasi Matriks Kompak -->
+            <div class="summary-matrix-container">
+                <table class="summary-matrix">
+                    <thead>
+                        <tr>
+                            <th style="width: 28%;">Kategori</th>
+                            <th style="width: 24%;">Laki-laki (L)</th>
+                            <th style="width: 24%;">Perempuan (P)</th>
+                            <th style="width: 24%;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="row-label">DPT</td>
+                            <td id="valDptL">0</td>
+                            <td id="valDptP">0</td>
+                            <td class="total-col" id="valTotalDpt">0</td>
+                        </tr>
+                        <tr class="row-sudah">
+                            <td class="row-label">Sudah Memilih</td>
+                            <td id="valLSudah">0</td>
+                            <td id="valPSudah">0</td>
+                            <td class="total-col" id="valTotalSudah">0</td>
+                        </tr>
+                        <tr class="row-belum">
+                            <td class="row-label">Belum Memilih</td>
+                            <td id="valLBelum">0</td>
+                            <td id="valPBelum">0</td>
+                            <td class="total-col" id="valTotalBelum">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <div class="search-container">
+                    <div class="search-label">CARI NO/NAMA</div>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Ketik untuk mencari...">
+                </div>
+
+                <div class="btn-group">
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
+                    <button class="btn btn-success" onclick="document.getElementById('excelFile').click()">Import Excel</button>
+                    <button class="btn btn-primary" onclick="exportExcel()">Ekspor Data</button>
+                    <button class="btn btn-danger" onclick="confirmClearData()">Kosongkan Data</button>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-responsive">
+                <table class="main-table" id="dptTable">
+                    <thead>
+                        <tr>
+                            <th class="col-no">NO DPT</th>
+                            <th class="col-nama">NAMA</th>
+                            <th class="col-jk">JENIS KELAMIN</th>
+                            <th class="col-usia">USIA</th>
+                            <th class="col-rt">RT</th>
+                            <th class="col-rw">RW</th>
+                            <th class="col-status">STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-c1" class="tab-content">
+        <div class="c1-wrapper pb-12 px-1">
+            <div class="flex justify-between items-center mb-2 no-print">
+                <div class="flex items-center gap-2">
+                    <span class="bg-blue-600 text-white font-bold px-2 py-1 rounded text-xs shadow">PEMILU 2024</span>
+                    <h1 class="text-xs sm:text-sm font-bold text-slate-800">Form C1 PPWP - TPS 007 Sukasejati</h1>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <button onclick="checkC1Validation()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1 rounded shadow transition flex items-center gap-1 text-xs">
+                        Cek Validasi C1
+                    </button>
+                    <button onclick="resetC1Form()" class="bg-red-700 hover:bg-red-800 text-white font-semibold px-3 py-1 rounded shadow transition flex items-center gap-1 text-xs">
+                        Reset Form C1
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-3 py-1 rounded shadow transition flex items-center gap-1 text-xs">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        Cetak / PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live Validation Status Banner -->
+            <div id="c1ValidationBanner" class="mb-2 p-2 rounded text-xs font-medium border flex justify-between items-center hidden">
+                <div id="c1BannerText">Status Sinkronisasi</div>
+                <button onclick="checkC1Validation()" class="bg-white text-slate-800 px-2 py-0.5 rounded border border-slate-400 font-bold hover:bg-slate-100 text-[10px]">Detail</button>
+            </div>
+
+            <div class="bg-white border-2 border-black p-3 sm:p-5 shadow-md">
+                <!-- Header Section -->
+                <div class="flex flex-col sm:flex-row justify-between items-start border-b-2 border-black pb-2 mb-2 gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 border-2 border-black rounded-full flex items-center justify-center bg-red-600 text-white font-extrabold text-[10px] text-center p-0.5 shadow-inner">
+                            KPU
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold tracking-wider text-slate-700">LOGO HOLOGRAM</p>
+                            <p class="text-[10px] italic text-slate-500">KPU Republik Indonesia</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center flex-1">
+                        <h2 class="text-xs sm:text-sm font-extrabold leading-tight">SERTIFIKAT HASIL DAN RINCIAN</h2>
+                        <h2 class="text-xs sm:text-sm font-extrabold leading-tight">PENGHITUNGAN PEROLEHAN SUARA DI TPS</h2>
+                        <h2 class="text-xs sm:text-sm font-extrabold leading-tight">DALAM PEMILU PRESIDEN DAN WAKIL PRESIDEN 2024</h2>
+                    </div>
+
+                    <div class="border-2 border-black px-2 py-1 text-center bg-slate-50 self-end sm:self-start">
+                        <span class="text-[10px] font-bold block">MODEL C 1</span>
+                        <span class="text-[10px] font-bold block">PPWP</span>
+                    </div>
+                </div>
+
+                <!-- Location Metadata info -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] sm:text-xs font-semibold mb-3 border-b border-black pb-2">
+                    <div class="flex justify-between sm:justify-start gap-3">
+                        <span class="w-40">Tempat Pemungutan Suara (TPS)</span>
+                        <span>: Nomor 007</span>
+                    </div>
+                    <div class="flex justify-between sm:justify-start gap-3">
+                        <span class="w-40">Desa/Kelurahan (*)</span>
+                        <span>: Sukasejati</span>
+                    </div>
+                    <div class="flex justify-between sm:justify-start gap-3">
+                        <span class="w-40">Kecamatan</span>
+                        <span>: Cikarang Selatan</span>
+                    </div>
+                    <div class="flex justify-between sm:justify-start gap-3">
+                        <span class="w-40">Kabupaten/Kota (*)</span>
+                        <span>: Bekasi</span>
+                    </div>
+                    <div class="flex justify-between sm:justify-start gap-3 sm:col-span-2">
+                        <span class="w-40">Provinsi</span>
+                        <span>: Jawa Barat</span>
+                    </div>
+                </div>
+
+                <!-- SECTION I -->
+                <div class="mb-3">
+                    <div class="bg-slate-200 border-t border-b border-black px-1.5 py-0.5 font-bold text-[11px] sm:text-xs">
+                        I. DATA PEMILIH DAN PENGGUNAAN HAK PILIH
+                    </div>
+                    
+                    <table class="w-full text-[11px] sm:text-xs election-table border-collapse mt-1">
+                        <thead>
+                            <tr class="bg-slate-100 text-center">
+                                <th class="p-0.5 w-8">NO.</th>
+                                <th class="p-0.5 text-left px-1.5">URAIAN</th>
+                                <th class="p-0.5 w-16">LAKI-LAKI</th>
+                                <th class="p-0.5 w-16">PEREMPUAN</th>
+                                <th class="p-0.5 w-20">JUMLAH</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-slate-100 font-bold"><td class="p-1 text-center">A.</td><td colspan="4" class="p-1 px-1.5">DATA PEMILIH</td></tr>
+                            <tr>
+                                <td class="p-1 text-center">1.</td>
+                                <td class="p-1 px-1.5">Pemilih terdaftar dalam Daftar Pemilih Tetap (DPT)</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a1" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a1" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_a1_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">2.</td>
+                                <td class="p-1 px-1.5">Pemilih terdaftar dalam Daftar Pemilih Tambahan (DPTb)</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a2" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a2" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_a2_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">3.</td>
+                                <td class="p-1 px-1.5">Pemilih terdaftar dalam Daftar Pemilih Khusus (DPK)</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a3" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a3" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_a3_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">4.</td>
+                                <td class="p-1 px-1.5">Pemilih Khusus Tambahan (DPKTb)/pengguna KTP / Paspor</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a4" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="a4" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_a4_tot">0</div></td>
+                            </tr>
+                            <tr class="font-bold bg-slate-50">
+                                <td class="p-1 text-center">5.</td>
+                                <td class="p-1 px-1.5">Jumlah Pemilih (1+2+3+4)</td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec1_a5_L">0</div></td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec1_a5_P">0</div></td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec1_a5_tot">0</div></td>
+                            </tr>
+
+                            <tr class="bg-slate-100 font-bold"><td class="p-1 text-center">B.</td><td colspan="4" class="p-1 px-1.5">PENGGUNA HAK PILIH</td></tr>
+                            <tr>
+                                <td class="p-1 text-center">1.</td>
+                                <td class="p-1 px-1.5">Pengguna hak pilih dalam DPT</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b1" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b1" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_b1_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">2.</td>
+                                <td class="p-1 px-1.5">Pengguna hak pilih dalam (DPTb)</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b2" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b2" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_b2_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">3.</td>
+                                <td class="p-1 px-1.5">Pengguna hak pilih dalam Daftar Pemilih Khusus (DPK)</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b3" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b3" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_b3_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">4.</td>
+                                <td class="p-1 px-1.5">Pengguna hak pilih dalam DPKTb / KTP</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b4" data-col="L" placeholder="0"></td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-field" data-section="sec1" data-row="b4" data-col="P" placeholder="0"></td>
+                                <td class="p-0.5"><div class="digit-box-readonly c1-total" id="sec1_b4_tot">0</div></td>
+                            </tr>
+                            <tr class="font-bold bg-slate-50">
+                                <td class="p-1 text-center">5.</td>
+                                <td class="p-1 px-1.5">Jumlah seluruh pengguna Hak Pilih (1+2+3+4)</td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec1_b5_L">0</div></td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec1_b5_P">0</div></td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec1_b5_tot">0</div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SECTION II -->
+                <div class="mb-3">
+                    <div class="bg-slate-200 border-t border-b border-black px-1.5 py-0.5 font-bold text-[11px] sm:text-xs">
+                        II. DATA PENGGUNAAN SURAT SUARA
+                    </div>
+                    <table class="w-full text-[11px] sm:text-xs election-table border-collapse mt-1">
+                        <thead>
+                            <tr class="bg-slate-100 text-center"><th class="p-0.5 w-8">NO.</th><th class="p-0.5 text-left px-1.5">URAIAN</th><th class="p-0.5 w-20">JUMLAH</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-1 text-center">1.</td>
+                                <td class="p-1 px-1.5">Jumlah surat suara yang diterima termasuk cadangan 2%</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec2_1" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">2.</td>
+                                <td class="p-1 px-1.5">Jumlah surat suara dikembalikan karena rusak/keliru</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec2_2" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">3.</td>
+                                <td class="p-1 px-1.5">Jumlah surat suara yang tidak digunakan</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec2_3" placeholder="0"></td>
+                            </tr>
+                            <tr class="font-bold bg-slate-50">
+                                <td class="p-1 text-center">4.</td>
+                                <td class="p-1 px-1.5">Jumlah surat suara yang digunakan (1 - 2 - 3 atau dari Pengguna Hak Pilih)</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec2_4" placeholder="0"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SECTION III -->
+                <div class="mb-3">
+                    <div class="bg-slate-200 border-t border-b border-black px-1.5 py-0.5 font-bold text-[11px] sm:text-xs">
+                        III. DATA JUMLAH SUARA SAH DAN TIDAK SAH
+                    </div>
+                    <table class="w-full text-[11px] sm:text-xs election-table border-collapse mt-1">
+                        <thead>
+                            <tr class="bg-slate-100 text-center"><th class="p-0.5 w-8">NO.</th><th class="p-0.5 text-left px-1.5">URAIAN</th><th class="p-0.5 w-20">JUMLAH</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-1 text-center">1.</td>
+                                <td class="p-1 px-1.5">Jumlah suara sah seluruh Calon</td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec3_1_tot">0</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center">2.</td>
+                                <td class="p-1 px-1.5">Jumlah suara tidak sah</td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec3_2_tot">0</div></td>
+                            </tr>
+                            <tr class="font-bold bg-slate-50">
+                                <td class="p-1 text-center">3.</td>
+                                <td class="p-1 px-1.5">Jumlah suara sah dan tidak sah (1 + 2)</td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec3_3_tot">0</div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SECTION IV -->
+                <div class="mb-1">
+                    <div class="bg-slate-200 border-t border-b border-black px-1.5 py-0.5 font-bold text-[11px] sm:text-xs">
+                        IV. RINCIAN PEROLEHAN SUARA SAH
+                    </div>
+                    <table class="w-full text-[11px] sm:text-xs election-table border-collapse mt-1">
+                        <thead>
+                            <tr class="bg-slate-100 text-center"><th class="p-0.5 w-8">NO.</th><th class="p-0.5 text-left px-1.5">URAIAN (Pasangan Calon)</th><th class="p-0.5 w-20">JUMLAH</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-1 text-center font-bold">1</td>
+                                <td class="p-1 px-1.5 font-medium">H. PRABOWO SUBIANTO - Ir. H. M. HATTA RAJASA</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec4_cand1" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-center font-bold">2</td>
+                                <td class="p-1 px-1.5 font-medium">Ir. H. JOKO WIDODO - Drs. H. M. JUSUF KALLA</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec4_cand2" placeholder="0"></td>
+                            </tr>
+                            <tr class="font-bold bg-slate-50">
+                                <td colspan="2" class="p-1 px-1.5 text-right">JUMLAH SELURUH SUARA SAH</td>
+                                <td class="p-0.5"><div class="digit-box-readonly font-bold" id="sec4_sah_tot">0</div></td>
+                            </tr>
+                            <tr class="font-bold bg-slate-50">
+                                <td colspan="2" class="p-1 px-1.5 text-right">JUMLAH SELURUH SUARA TIDAK SAH</td>
+                                <td class="p-0.5"><input type="number" min="0" class="digit-box-input c1-single-field" data-key="sec3_2" placeholder="0"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Notifications / Confirmations -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-box">
+            <div class="modal-text" id="modalMessage">Pesan sistem</div>
+            <div class="modal-actions" id="modalActions">
+                <button class="modal-btn" onclick="closeModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+        <button class="nav-tab active" onclick="switchTab('dpt', this)">Data Pemilih Tetap (DPT)</button>
+        <button class="nav-tab" onclick="switchTab('c1', this)">Model C1 PPWP</button>
+    </div>
+
+    <script>
+        // Tab Switcher Logic
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        // DPT Logic
+        const STORAGE_KEY = 'dpt_interactive_records_compact_merged';
+        let dptData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+        // C1 Storage Key
+        const C1_STORAGE_KEY = 'c1_form_realtime_data_2024';
+        let c1Data = JSON.parse(localStorage.getItem(C1_STORAGE_KEY)) || {};
+
+        function showModal(message, isConfirm = false, onConfirm = null) {
+            const modal = document.getElementById('customModal');
+            const msgEl = document.getElementById('modalMessage');
+            const actionsEl = document.getElementById('modalActions');
+            
+            msgEl.innerHTML = message;
+            if (isConfirm) {
+                actionsEl.innerHTML = `
+                    <button class="modal-btn modal-btn-danger" id="modalYesBtn">Ya</button>
+                    <button class="modal-btn" style="background-color: #6c757d;" onclick="closeModal()">Batal</button>
+                `;
+                document.getElementById('modalYesBtn').onclick = function() {
+                    closeModal();
+                    if (onConfirm) onConfirm();
+                };
+            } else {
+                actionsEl.innerHTML = `<button class="modal-btn" onclick="closeModal()">OK</button>`;
+            }
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.remove('active');
+        }
+
+        function isMale(jk) {
+            if (!jk) return false;
+            const val = String(jk).trim().toLowerCase();
+            return val === 'l' || val.startsWith('laki');
+        }
+
+        function isFemale(jk) {
+            if (!jk) return false;
+            const val = String(jk).trim().toLowerCase();
+            return val === 'p' || val.startsWith('perempuan');
+        }
+
+        function isCheckedStatus(statusVal) {
+            return statusVal === true || statusVal === 'true' || String(statusVal).trim() === '✔' || String(statusVal).trim().toLowerCase() === 'v' || String(statusVal).trim().toLowerCase() === 'sudah';
+        }
+
+        function updateSummaryPanel() {
+            let dptL = 0, dptP = 0, lSudah = 0, pSudah = 0, lBelum = 0, pBelum = 0;
+
+            dptData.forEach(item => {
+                const male = isMale(item.jk);
+                const female = isFemale(item.jk);
+                const checked = isCheckedStatus(item.status);
+
+                if (male) {
+                    dptL++;
+                    if (checked) lSudah++; else lBelum++;
+                } else if (female) {
+                    dptP++;
+                    if (checked) pSudah++; else pBelum++;
+                } else {
+                    const jkStr = String(item.jk || '').trim().toLowerCase();
+                    if (jkStr.startsWith('l')) {
+                        dptL++;
+                        if (checked) lSudah++; else lBelum++;
+                    } else if (jkStr.startsWith('p')) {
+                        dptP++;
+                        if (checked) pSudah++; else pBelum++;
+                    }
+                }
+            });
+
+            document.getElementById('valDptL').innerText = dptL;
+            document.getElementById('valDptP').innerText = dptP;
+            document.getElementById('valTotalDpt').innerText = dptData.length;
+            document.getElementById('valLSudah').innerText = lSudah;
+            document.getElementById('valPSudah').innerText = pSudah;
+            document.getElementById('valTotalSudah').innerText = lSudah + pSudah;
+            document.getElementById('valLBelum').innerText = lBelum;
+            document.getElementById('valPBelum').innerText = pBelum;
+            document.getElementById('valTotalBelum').innerText = lBelum + pBelum;
+        }
+
+        function renderTable(filterText = '') {
+            const tbody = document.getElementById('tableBody');
+            
+            const filteredData = dptData.filter(item => {
+                const rowString = `${item.no || ''} ${item.nama || ''} ${item.jk || ''} ${item.usia || ''} ${item.rt || ''} ${item.rw || ''} ${item.status || ''}`.toLowerCase();
+                return rowString.includes(filterText.toLowerCase());
+            });
+
+            updateSummaryPanel();
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ada data DPT. Silakan import file Excel terlebih dahulu.</td></tr>`;
+                return;
+            }
+
+            // Optimized batch HTML rendering for high performance and responsiveness
+            let rowsHtml = '';
+            filteredData.forEach((row) => {
+                const originalIndex = dptData.findIndex(item => item === row);
+                const isChecked = isCheckedStatus(row.status);
+                
+                rowsHtml += `
+                    <tr class="${isChecked ? 'highlight' : ''}">
+                        <td class="col-no">${row.no || (originalIndex + 1)}</td>
+                        <td class="col-nama">${escapeHtml(row.nama || '')}</td>
+                        <td class="col-jk">${escapeHtml(row.jk || '')}</td>
+                        <td class="col-usia">${escapeHtml(row.usia || '')}</td>
+                        <td class="col-rt">${escapeHtml(row.rt || '')}</td>
+                        <td class="col-rw">${escapeHtml(row.rw || '')}</td>
+                        <td class="col-status">
+                            <input type="checkbox" class="status-checkbox" data-index="${originalIndex}" ${isChecked ? 'checked' : ''}>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = rowsHtml;
+
+            // Re-attach event listeners efficiently
+            document.querySelectorAll('.status-checkbox').forEach(chk => {
+                chk.addEventListener('change', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    const checked = this.checked;
+                    dptData[index].status = checked ? '✔' : '';
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
+
+                    const rowTr = this.closest('tr');
+                    if (checked) rowTr.classList.add('highlight');
+                    else rowTr.classList.remove('highlight');
+
+                    updateSummaryPanel();
+                });
+            });
+        }
+
+        function escapeHtml(text) {
+            if (text === undefined || text === null) return '';
+            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Debounce mechanism for smooth search responsiveness
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value;
+            searchTimeout = setTimeout(() => {
+                renderTable(query);
+            }, 150);
+        });
+
+        document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonRows.length < 2) {
+                        showModal('File Excel tidak memiliki data yang valid.');
+                        return;
+                    }
+
+                    let mappedData = [];
+                    for (let i = 1; i < jsonRows.length; i++) {
+                        const row = jsonRows[i];
+                        if (!row || row.length === 0) continue;
+                        mappedData.push({
+                            no: row[0] !== undefined ? row[0] : i,
+                            nama: row[1] !== undefined ? row[1] : '',
+                            jk: row[2] !== undefined ? row[2] : '',
+                            usia: row[3] !== undefined ? row[3] : '',
+                            rt: row[4] !== undefined ? row[4] : '',
+                            rw: row[5] !== undefined ? row[5] : '',
+                            status: row[6] !== undefined ? row[6] : ''
+                        });
+                    }
+
+                    dptData = mappedData;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
+                    renderTable();
+                    showModal(`Berhasil mengimpor ${dptData.length} data pemilih!`);
+                } catch (error) {
+                    console.error(error);
+                    showModal('Gagal membaca file Excel. Pastikan format file benar.');
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function confirmClearData() {
+            showModal('Apakah Anda yakin ingin mengosongkan seluruh data DPT?', true, function() {
+                dptData = [];
+                localStorage.removeItem(STORAGE_KEY);
+                renderTable();
+                document.getElementById('searchInput').value = '';
+            });
+        }
+
+        function exportExcel() {
+            if (dptData.length === 0) {
+                showModal('Tidak ada data untuk diekspor.');
+                return;
+            }
+
+            const exportWSData = [["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]];
+            dptData.forEach(item => {
+                exportWSData.push([item.no, item.nama, item.jk, item.usia, item.rt, item.rw, item.status]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportWSData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data DPT");
+            XLSX.writeFile(wb, "Data_DPT_Updated.xlsx");
+        }
+
+        // --- Model C1 Real-Time Calculation & Validation Logic ---
+        function initC1Form() {
+            document.querySelectorAll('.c1-field').forEach(input => {
+                const sec = input.getAttribute('data-section');
+                const row = input.getAttribute('data-row');
+                const col = input.getAttribute('data-col');
+                const key = `${sec}_${row}_${col}`;
+                if (c1Data[key] !== undefined) {
+                    input.value = c1Data[key];
+                }
+            });
+
+            document.querySelectorAll('.c1-single-field').forEach(input => {
+                const key = input.getAttribute('data-key');
+                if (c1Data[key] !== undefined) {
+                    input.value = c1Data[key];
+                }
+            });
+
+            calculateC1Form();
+
+            document.querySelectorAll('.c1-field').forEach(input => {
+                input.addEventListener('input', function() {
+                    const sec = this.getAttribute('data-section');
+                    const row = this.getAttribute('data-row');
+                    const col = this.getAttribute('data-col');
+                    const key = `${sec}_${row}_${col}`;
+                    c1Data[key] = this.value;
+                    localStorage.setItem(C1_STORAGE_KEY, JSON.stringify(c1Data));
+                    calculateC1Form();
+                });
+            });
+
+            document.querySelectorAll('.c1-single-field').forEach(input => {
+                input.addEventListener('input', function() {
+                    const key = this.getAttribute('data-key');
+                    c1Data[key] = this.value;
+                    localStorage.setItem(C1_STORAGE_KEY, JSON.stringify(c1Data));
+                    calculateC1Form();
+                });
+            });
+        }
+
+        function getVal(selectorKey) {
+            const val = parseInt(c1Data[selectorKey]) || 0;
+            return val;
+        }
+
+        function calculateC1Form() {
+            const rowsA = ['a1', 'a2', 'a3', 'a4'];
+            let sumAL = 0, sumAP = 0, sumATot = 0;
+
+            rowsA.forEach(row => {
+                const l = getVal(`sec1_${row}_L`);
+                const p = getVal(`sec1_${row}_P`);
+                const tot = l + p;
+                const elTot = document.getElementById(`sec1_${row}_tot`);
+                if(elTot) elTot.innerText = tot;
+                sumAL += l;
+                sumAP += p;
+                sumATot += tot;
+            });
+
+            const elA5L = document.getElementById('sec1_a5_L');
+            const elA5P = document.getElementById('sec1_a5_P');
+            const elA5Tot = document.getElementById('sec1_a5_tot');
+            if(elA5L) elA5L.innerText = sumAL;
+            if(elA5P) elA5P.innerText = sumAP;
+            if(elA5Tot) elA5Tot.innerText = sumATot;
+
+            const rowsB = ['b1', 'b2', 'b3', 'b4'];
+            let sumBL = 0, sumBP = 0, sumBTot = 0;
+
+            rowsB.forEach(row => {
+                const l = getVal(`sec1_${row}_L`);
+                const p = getVal(`sec1_${row}_P`);
+                const tot = l + p;
+                const elTot = document.getElementById(`sec1_${row}_tot`);
+                if(elTot) elTot.innerText = tot;
+                sumBL += l;
+                sumBP += p;
+                sumBTot += tot;
+            });
+
+            const elB5L = document.getElementById('sec1_b5_L');
+            const elB5P = document.getElementById('sec1_b5_P');
+            const elB5Tot = document.getElementById('sec1_b5_tot');
+            if(elB5L) elB5L.innerText = sumBL;
+            if(elB5P) elB5P.innerText = sumBP;
+            if(elB5Tot) elB5Tot.innerText = sumBTot;
+
+            const s2_1 = getVal('sec2_1');
+            const s2_2 = getVal('sec2_2');
+            const totalHakPilih = sumBTot;
+
+            const autoS2_3 = Math.max(0, s2_1 - s2_2 - totalHakPilih);
+            const s2_3Input = document.querySelector('[data-key="sec2_3"]');
+            if (s2_3Input && (c1Data['sec2_3'] === undefined || c1Data['sec2_3'] === '')) {
+                s2_3Input.placeholder = autoS2_3;
+            }
+
+            const activeS2_3 = (c1Data['sec2_3'] !== undefined && c1Data['sec2_3'] !== '') ? getVal('sec2_3') : autoS2_3;
+            const autoS2_4 = Math.max(0, s2_1 - s2_2 - activeS2_3);
+            
+            const s2_4Input = document.querySelector('[data-key="sec2_4"]');
+            if (s2_4Input && (c1Data['sec2_4'] === undefined || c1Data['sec2_4'] === '')) {
+                s2_4Input.placeholder = autoS2_4;
+            }
+
+            const cand1 = getVal('sec4_cand1');
+            const cand2 = getVal('sec4_cand2');
+            const totalSah = cand1 + cand2;
+
+            const elS4Sah = document.getElementById('sec4_sah_tot');
+            if(elS4Sah) elS4Sah.innerText = totalSah;
+
+            const autoSuaraTidakSah = Math.max(0, totalHakPilih - totalSah);
+            const suaraTidakSahInput = document.querySelector('[data-key="sec3_2"]');
+            if (suaraTidakSahInput && (c1Data['sec3_2'] === undefined || c1Data['sec3_2'] === '')) {
+                suaraTidakSahInput.placeholder = autoSuaraTidakSah;
+            }
+
+            const activeSuaraTidakSah = (c1Data['sec3_2'] !== undefined && c1Data['sec3_2'] !== '') ? getVal('sec3_2') : autoSuaraTidakSah;
+            const totalSahTidSah = totalSah + activeSuaraTidakSah;
+
+            const elS3_1 = document.getElementById('sec3_1_tot');
+            const elS3_2 = document.getElementById('sec3_2_tot');
+            const elS3_3 = document.getElementById('sec3_3_tot');
+
+            if(elS3_1) elS3_1.innerText = totalSah;
+            if(elS3_2) elS3_2.innerText = activeSuaraTidakSah;
+            if(elS3_3) elS3_3.innerText = totalSahTidSah;
+
+            performValidationCheck(false);
+        }
+
+        function getValExplicit(key) {
+            return parseInt(c1Data[key]) || 0;
+        }
+
+        function performValidationCheck(showPopupOnValid = true) {
+            const b1 = getValExplicit('sec1_b1_L') + getValExplicit('sec1_b1_P');
+            const b2 = getValExplicit('sec1_b2_L') + getValExplicit('sec1_b2_P');
+            const b3 = getValExplicit('sec1_b3_L') + getValExplicit('sec1_b3_P');
+            const b4 = getValExplicit('sec1_b4_L') + getValExplicit('sec1_b4_P');
+            const totalHakPilih = b1 + b2 + b3 + b4;
+
+            let totalSuratDigunakan = 0;
+            if (c1Data['sec2_4'] !== undefined && c1Data['sec2_4'] !== '') {
+                totalSuratDigunakan = parseInt(c1Data['sec2_4']) || 0;
+            } else {
+                const s2_1 = getValExplicit('sec2_1');
+                const s2_2 = getValExplicit('sec2_2');
+                const s2_3 = (c1Data['sec2_3'] !== undefined && c1Data['sec2_3'] !== '') ? getValExplicit('sec2_3') : Math.max(0, s2_1 - s2_2 - totalHakPilih);
+                totalSuratDigunakan = Math.max(0, s2_1 - s2_2 - s2_3);
+            }
+
+            const cand1 = getValExplicit('sec4_cand1');
+            const cand2 = getValExplicit('sec4_cand2');
+            const suaraSah = cand1 + cand2;
+            
+            const autoSuaraTidakSah = Math.max(0, totalHakPilih - suaraSah);
+            const suaraTidakSah = (c1Data['sec3_2'] !== undefined && c1Data['sec3_2'] !== '') ? getValExplicit('sec3_2') : autoSuaraTidakSah;
+            
+            const totalSuaraSahTidakSah = suaraSah + suaraTidakSah;
+            const isConsistent = (totalHakPilih === totalSuratDigunakan) && (totalSuratDigunakan === totalSuaraSahTidakSah);
+
+            const elB5Tot = document.getElementById('sec1_b5_tot');
+            const elS2_4 = document.querySelector('[data-key="sec2_4"]');
+            const elS3_3 = document.getElementById('sec3_3_tot');
+
+            const elementsToColor = [elB5Tot, elS2_4, elS3_3];
+
+            elementsToColor.forEach(el => {
+                if (!el) return;
+                el.classList.remove('bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+                if (el.tagName === 'INPUT') {
+                    el.style.backgroundColor = '';
+                    el.style.borderColor = '';
+                    el.style.color = '';
+                }
+
+                if (isConsistent) {
+                    if (el.tagName === 'INPUT') {
+                        el.style.backgroundColor = '#d1fae5';
+                        el.style.borderColor = '#10b981';
+                        el.style.color = '#065f46';
+                    } else {
+                        el.classList.add('bg-emerald-100', 'text-emerald-800');
+                    }
+                } else {
+                    if (el.tagName === 'INPUT') {
+                        el.style.backgroundColor = '#fee2e2';
+                        el.style.borderColor = '#ef4444';
+                        el.style.color = '#991b1b';
+                    } else {
+                        el.classList.add('bg-rose-100', 'text-rose-800');
+                    }
+                }
+            });
+
+            const banner = document.getElementById('c1ValidationBanner');
+            const bannerText = document.getElementById('c1BannerText');
+
+            if (!banner || !bannerText) return;
+
+            banner.classList.remove('hidden');
+            if (isConsistent) {
+                banner.className = "mb-2 p-2 rounded text-xs font-medium border bg-emerald-50 border-emerald-300 text-emerald-800 flex justify-between items-center";
+                bannerText.innerHTML = `<strong>Status Sinkronisasi:</strong> Valid & Konsisten (${totalHakPilih} pemilih = ${totalSuratDigunakan} surat suara = ${totalSuaraSahTidakSah} total suara)`;
+                if (showPopupOnValid) {
+                    showModal(`<strong>Validasi C1 Sempurna!</strong><br><br>Semua komponen bernilai sama dan sinkron:<br>• Pengguna Hak Pilih (I.B.5): <b>${totalHakPilih}</b><br>• Surat Suara Digunakan (II.4): <b>${totalSuratDigunakan}</b><br>• Suara Sah + Tidak Sah (III.3): <b>${totalSuaraSahTidakSah}</b>`);
+                }
+            } else {
+                banner.className = "mb-2 p-2 rounded text-xs font-medium border bg-rose-50 border-rose-300 text-rose-800 flex justify-between items-center";
+                bannerText.innerHTML = `<strong>Peringatan Sinkronisasi:</strong> Nilai tidak sinkron! Klik Detail untuk koreksi.`;
+                if (showPopupOnValid) {
+                    showModal(`<strong>Peringatan Validasi Form C1!</strong><br><br>Nilai antar bagian tidak menunjukkan angka yang sama:<br><br>
+                        1. Pengguna Hak Pilih (I.B.5): <b>${totalHakPilih}</b><br>
+                        2. Surat Suara Digunakan (II.4): <b>${totalSuratDigunakan}</b><br>
+                        3. Suara Sah + Tidak Sah (III.3): <b>${totalSuaraSahTidakSah}</b><br><br>
+                        <i>Silakan periksa kembali isian form agar nilainya selaras.</i>`);
+                }
+            }
+        }
+
+        function checkC1Validation() {
+            performValidationCheck(true);
+        }
+
+        function resetC1Form() {
+            showModal('Apakah Anda yakin ingin mereset seluruh isian form Model C1?', true, function() {
+                c1Data = {};
+                localStorage.removeItem(C1_STORAGE_KEY);
+                document.querySelectorAll('.c1-field, .c1-single-field').forEach(input => {
+                    input.value = '';
+                    input.style.backgroundColor = '';
+                    input.style.borderColor = '';
+                    input.style.color = '';
+                });
+                ['sec1_b5_tot', 'sec3_3_tot'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.remove('bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+                    }
+                });
+                calculateC1Form();
+                document.getElementById('c1ValidationBanner').classList.add('hidden');
+            });
+        }
+
+        renderTable();
+        initC1Form();
+    </script>
+</body>
+</html>
