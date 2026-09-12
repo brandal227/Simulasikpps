@@ -322,12 +322,16 @@
         }
 
         .col-no { width: 5%; text-align: center; }
-        .col-nama { width: 43%; }
-        .col-jk { width: 10%; text-align: center; }
-        .col-usia { width: 7%; text-align: center; }
-        .col-rt { width: 7%; text-align: center; }
-        .col-rw { width: 7%; text-align: center; }
-        .col-status { width: 14%; text-align: center; }
+        .col-nama { width: 22%; }
+        .col-jk { width: 8%; text-align: center; }
+        .col-tmplahir { width: 12%; }
+        .col-tgllahir { width: 10%; text-align: center; }
+        .col-statuskawin { width: 9%; text-align: center; }
+        .col-nik { width: 13%; text-align: center; }
+        .col-alamat { width: 13%; }
+        .col-rt { width: 4%; text-align: center; }
+        .col-rw { width: 4%; text-align: center; }
+        .col-status { width: 10%; text-align: center; }
 
         tr.highlight {
             background-color: var(--highlight-green) !important;
@@ -537,9 +541,13 @@
                     <thead>
                         <tr>
                             <th class="col-no">NO DPT</th>
-                            <th class="col-nama">NAMA</th>
+                            <th class="col-nama">NAMA LGKP</th>
                             <th class="col-jk">JENIS KELAMIN</th>
-                            <th class="col-usia">USIA</th>
+                            <th class="col-tmplahir">TEMPAT LAHIR</th>
+                            <th class="col-tgllahir">TANGGAL LAHIR</th>
+                            <th class="col-statuskawin">STATUS KAWIN</th>
+                            <th class="col-nik">NO NIK/KTP</th>
+                            <th class="col-alamat">ALAMAT</th>
                             <th class="col-rt">RT</th>
                             <th class="col-rw">RW</th>
                             <th class="col-status">STATUS</th>
@@ -952,14 +960,14 @@
             const tbody = document.getElementById('tableBody');
             
             const filteredData = dptData.filter(item => {
-                const rowString = `${item.no || ''} ${item.nama || ''} ${item.jk || ''} ${item.usia || ''} ${item.rt || ''} ${item.rw || ''} ${item.status || ''}`.toLowerCase();
+                const rowString = `${item.no || ''} ${item.nama || ''} ${item.jk || ''} ${item.tmplahir || ''} ${item.tgllahir || ''} ${item.statuskawin || ''} ${item.nik || ''} ${item.alamat || ''} ${item.rt || ''} ${item.rw || ''} ${item.status || ''}`.toLowerCase();
                 return rowString.includes(filterText.toLowerCase());
             });
 
             updateSummaryPanel();
 
             if (filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ada data DPT. Silakan impor file melalui menu Impor.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="empty-state">Tidak ada data DPT. Silakan impor file melalui menu Impor.</td></tr>`;
                 return;
             }
 
@@ -973,7 +981,11 @@
                         <td class="col-no">${row.no || (originalIndex + 1)}</td>
                         <td class="col-nama">${escapeHtml(row.nama || '')}</td>
                         <td class="col-jk">${escapeHtml(row.jk || '')}</td>
-                        <td class="col-usia">${escapeHtml(row.usia || '')}</td>
+                        <td class="col-tmplahir">${escapeHtml(row.tmplahir || '')}</td>
+                        <td class="col-tgllahir">${escapeHtml(row.tgllahir || '')}</td>
+                        <td class="col-statuskawin">${escapeHtml(row.statuskawin || '')}</td>
+                        <td class="col-nik">${escapeHtml(row.nik || '')}</td>
+                        <td class="col-alamat">${escapeHtml(row.alamat || '')}</td>
                         <td class="col-rt">${escapeHtml(row.rt || '')}</td>
                         <td class="col-rw">${escapeHtml(row.rw || '')}</td>
                         <td class="col-status">
@@ -1099,10 +1111,14 @@
                     no: row[0] !== undefined && row[0] !== '' ? row[0] : (mappedData.length + 1),
                     nama: row[1] !== undefined ? row[1] : '',
                     jk: row[2] !== undefined ? row[2] : '',
-                    usia: row[3] !== undefined ? row[3] : '',
-                    rt: row[4] !== undefined ? row[4] : '',
-                    rw: row[5] !== undefined ? row[5] : '',
-                    status: row[6] !== undefined ? row[6] : ''
+                    tmplahir: row[3] !== undefined ? row[3] : '',
+                    tgllahir: row[4] !== undefined ? row[4] : '',
+                    statuskawin: row[5] !== undefined ? row[5] : '',
+                    nik: row[6] !== undefined ? row[6] : '',
+                    alamat: row[7] !== undefined ? row[7] : '',
+                    rt: row[8] !== undefined ? row[8] : '',
+                    rw: row[9] !== undefined ? row[9] : '',
+                    status: row[10] !== undefined ? row[10] : ''
                 });
             }
 
@@ -1130,9 +1146,9 @@
             }
 
             if (format === 'csv') {
-                let csvContent = "data:text/csv;charset=utf-8,NO DPT,NAMA,JENIS KELAMIN,USIA,RT,RW,STATUS\r\n";
+                let csvContent = "data:text/csv;charset=utf-8,NO DPT,NAMA LGKP,JENIS KELAMIN,TEMPAT LAHIR,TANGGAL LAHIR,STATUS KAWIN,NO NIK/KTP,ALAMAT,RT,RW,STATUS\r\n";
                 dptData.forEach(item => {
-                    let row = [item.no || '', `"${item.nama || ''}"`, item.jk || '', item.usia || '', item.rt || '', item.rw || '', `"${item.status || ''}"`];
+                    let row = [item.no || '', `"${item.nama || ''}"`, item.jk || '', `"${item.tmplahir || ''}"`, item.tgllahir || '', item.statuskawin || '', item.nik || '', `"${item.alamat || ''}"`, item.rt || '', item.rw || '', `"${item.status || ''}"`];
                     csvContent += row.join(",") + "\r\n";
                 });
                 const encodedUri = encodeURI(csvContent);
@@ -1145,10 +1161,10 @@
             } 
             else if (format === 'xlsx') {
                 const exportRows = [
-                    ["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]
+                    ["NO DPT", "NAMA LGKP", "JENIS KELAMIN", "TEMPAT LAHIR", "TANGGAL LAHIR", "STATUS KAWIN", "NO NIK/KTP", "ALAMAT", "RT", "RW", "STATUS"]
                 ];
                 dptData.forEach(item => {
-                    exportRows.push([item.no || '', item.nama || '', item.jk || '', item.usia || '', item.rt || '', item.rw || '', item.status || '']);
+                    exportRows.push([item.no || '', item.nama || '', item.jk || '', item.tmplahir || '', item.tgllahir || '', item.statuskawin || '', item.nik || '', item.alamat || '', item.rt || '', item.rw || '', item.status || '']);
                 });
                 const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
                 const workbook = XLSX.utils.book_new();
@@ -1165,17 +1181,15 @@
                 downloadAnchor.remove();
             } 
             else if (format === 'pdf') {
-                // Export table to PDF using SheetJS or standard table format simulation
                 const exportRows = [
-                    ["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]
+                    ["NO DPT", "NAMA LGKP", "JENIS KELAMIN", "TEMPAT LAHIR", "TANGGAL LAHIR", "STATUS KAWIN", "NO NIK/KTP", "ALAMAT", "RT", "RW", "STATUS"]
                 ];
                 dptData.forEach(item => {
-                    exportRows.push([item.no || '', item.nama || '', item.jk || '', item.usia || '', item.rt || '', item.rw || '', item.status || '']);
+                    exportRows.push([item.no || '', item.nama || '', item.jk || '', item.tmplahir || '', item.tgllahir || '', item.statuskawin || '', item.nik || '', item.alamat || '', item.rt || '', item.rw || '', item.status || '']);
                 });
                 const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Data DPT");
-                // Using SheetJS to trigger PDF/HTML print layout or download message
                 XLSX.writeFile(workbook, "Data_DPT_Updated.pdf", { bookType: "html" });
             }
         }
