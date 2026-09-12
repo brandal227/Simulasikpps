@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gabungan DPT & Model C1 PPWP</title>
-    <!-- SheetJS for Excel processing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel export and CSV import (.csv) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -453,9 +454,9 @@
                 </div>
 
                 <div class="btn-group">
-                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
-                    <button class="btn btn-success" onclick="document.getElementById('excelFile').click()">Import Excel</button>
-                    <button class="btn btn-primary" onclick="exportExcel()">Ekspor Data</button>
+                    <input type="file" id="importFile" accept=".csv">
+                    <button class="btn btn-success" onclick="document.getElementById('importFile').click()">Import File CSV</button>
+                    <button class="btn btn-primary" onclick="exportExcel()">Ekspor Excel</button>
                     <button class="btn btn-danger" onclick="confirmClearData()">Kosongkan Data</button>
                 </div>
             </div>
@@ -873,11 +874,10 @@
             updateSummaryPanel();
 
             if (filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ada data DPT. Silakan import file Excel terlebih dahulu.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ada data DPT. Silakan import file CSV terlebih dahulu.</td></tr>`;
                 return;
             }
 
-            // Optimized batch HTML rendering for high performance and responsiveness
             let rowsHtml = '';
             filteredData.forEach((row) => {
                 const originalIndex = dptData.findIndex(item => item === row);
@@ -899,7 +899,6 @@
             });
             tbody.innerHTML = rowsHtml;
 
-            // Re-attach event listeners efficiently
             document.querySelectorAll('.status-checkbox').forEach(chk => {
                 chk.addEventListener('change', function() {
                     const index = parseInt(this.getAttribute('data-index'));
@@ -921,7 +920,6 @@
             return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        // Debounce mechanism for smooth search responsiveness
         let searchTimeout;
         document.getElementById('searchInput').addEventListener('keyup', function() {
             clearTimeout(searchTimeout);
@@ -931,51 +929,65 @@
             }, 150);
         });
 
-        document.getElementById('excelFile').addEventListener('change', function(e) {
+        // CSV Import Handler using SheetJS (XLSX.read with type 'string')
+        document.getElementById('importFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const csvText = e.target.result;
+                    // SheetJS can parse CSV text flawlessly using XLSX.read
+                    const workbook = XLSX.read(csvText, { type: 'string' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
                     const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    if (jsonRows.length < 2) {
-                        showModal('File Excel tidak memiliki data yang valid.');
-                        return;
-                    }
-
-                    let mappedData = [];
-                    for (let i = 1; i < jsonRows.length; i++) {
-                        const row = jsonRows[i];
-                        if (!row || row.length === 0) continue;
-                        mappedData.push({
-                            no: row[0] !== undefined ? row[0] : i,
-                            nama: row[1] !== undefined ? row[1] : '',
-                            jk: row[2] !== undefined ? row[2] : '',
-                            usia: row[3] !== undefined ? row[3] : '',
-                            rt: row[4] !== undefined ? row[4] : '',
-                            rw: row[5] !== undefined ? row[5] : '',
-                            status: row[6] !== undefined ? row[6] : ''
-                        });
-                    }
-
-                    dptData = mappedData;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
-                    renderTable();
-                    showModal(`Berhasil mengimpor ${dptData.length} data pemilih!`);
+                    processImportedRows(jsonRows);
                 } catch (error) {
                     console.error(error);
-                    showModal('Gagal membaca file Excel. Pastikan format file benar.');
+                    showModal('Gagal membaca file CSV. Pastikan format file benar.');
                 } finally {
                     e.target.value = '';
                 }
             };
-            reader.readAsArrayBuffer(file);
+            reader.readAsText(file, 'UTF-8');
         });
+
+        function processImportedRows(jsonRows) {
+            if (!jsonRows || jsonRows.length < 2) {
+                showModal('File tidak memiliki data yang valid.');
+                return;
+            }
+
+            let startIndex = 1;
+            const firstRowStr = jsonRows[0].map(cell => String(cell || '')).join(' ').toLowerCase();
+            if (firstRowStr.includes('nama') || firstRowStr.includes('no')) {
+                startIndex = 1;
+            } else {
+                startIndex = 0;
+            }
+
+            let mappedData = [];
+            for (let i = startIndex; i < jsonRows.length; i++) {
+                const row = jsonRows[i];
+                if (!row || row.length === 0) continue;
+                mappedData.push({
+                    no: row[0] !== undefined && row[0] !== '' ? row[0] : (mappedData.length + 1),
+                    nama: row[1] !== undefined ? row[1] : '',
+                    jk: row[2] !== undefined ? row[2] : '',
+                    usia: row[3] !== undefined ? row[3] : '',
+                    rt: row[4] !== undefined ? row[4] : '',
+                    rw: row[5] !== undefined ? row[5] : '',
+                    status: row[6] !== undefined ? row[6] : ''
+                });
+            }
+
+            dptData = mappedData;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
+            renderTable();
+            showModal(`Berhasil mengimpor ${dptData.length} data pemilih dari file CSV!`);
+        }
 
         function confirmClearData() {
             showModal('Apakah Anda yakin ingin mengosongkan seluruh data DPT?', true, function() {
@@ -992,15 +1004,26 @@
                 return;
             }
 
-            const exportWSData = [["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]];
+            const exportRows = [
+                ["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]
+            ];
+
             dptData.forEach(item => {
-                exportWSData.push([item.no, item.nama, item.jk, item.usia, item.rt, item.rw, item.status]);
+                exportRows.push([
+                    item.no || '',
+                    item.nama || '',
+                    item.jk || '',
+                    item.usia || '',
+                    item.rt || '',
+                    item.rw || '',
+                    item.status || ''
+                ]);
             });
 
-            const ws = XLSX.utils.aoa_to_sheet(exportWSData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data DPT");
-            XLSX.writeFile(wb, "Data_DPT_Updated.xlsx");
+            const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data DPT");
+            XLSX.writeFile(workbook, "Data_DPT_Updated.xlsx");
         }
 
         // --- Model C1 Real-Time Calculation & Validation Logic ---
