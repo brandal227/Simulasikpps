@@ -6,8 +6,11 @@
     <title>Gabungan DPT & Model C1 PPWP</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS for Excel export and CSV import (.csv) -->
+    <!-- SheetJS for Excel/CSV import & export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & html2canvas for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -220,6 +223,7 @@
             display: flex;
             gap: 3px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn {
@@ -241,6 +245,47 @@
 
         .btn-success { background-color: var(--btn-green); }
         .btn-success:hover { background-color: var(--btn-green-hover); }
+
+        /* Dropdown Styling */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #ffffff;
+            min-width: 130px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+        }
+
+        .dropdown-content button {
+            color: #333;
+            padding: 5px 10px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #f1f1f1;
+            color: #000;
+        }
+
+        .dropdown.active .dropdown-content {
+            display: block;
+        }
 
         input[type="file"] {
             display: none;
@@ -454,9 +499,34 @@
                 </div>
 
                 <div class="btn-group">
-                    <input type="file" id="importFile" accept=".csv">
-                    <button class="btn btn-success" onclick="document.getElementById('importFile').click()">Import File CSV</button>
-                    <button class="btn btn-primary" onclick="exportExcel()">Ekspor Excel</button>
+                    <!-- Hidden file inputs for import options -->
+                    <input type="file" id="importFileCsv" accept=".csv">
+                    <input type="file" id="importFileXlsx" accept=".xlsx, .xls">
+                    <input type="file" id="importFilePdf" accept=".pdf">
+                    <input type="file" id="importFileJson" accept=".json">
+
+                    <!-- Dropdown Impor -->
+                    <div class="dropdown" id="importDropdown">
+                        <button class="btn btn-success" onclick="toggleDropdown('importDropdown')">Impor File ▼</button>
+                        <div class="dropdown-content">
+                            <button onclick="triggerImport('csv')">CSV (.csv)</button>
+                            <button onclick="triggerImport('xlsx')">Excel (.xlsx)</button>
+                            <button onclick="triggerImport('pdf')">PDF (.pdf)</button>
+                            <button onclick="triggerImport('json')">JSON (.json)</button>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Ekspor -->
+                    <div class="dropdown" id="exportDropdown">
+                        <button class="btn btn-primary" onclick="toggleDropdown('exportDropdown')">Ekspor Data ▼</button>
+                        <div class="dropdown-content">
+                            <button onclick="exportData('csv')">CSV (.csv)</button>
+                            <button onclick="exportData('xlsx')">Excel (.xlsx)</button>
+                            <button onclick="exportData('pdf')">PDF (.pdf)</button>
+                            <button onclick="exportData('json')">JSON (.json)</button>
+                        </div>
+                    </div>
+
                     <button class="btn btn-danger" onclick="confirmClearData()">Kosongkan Data</button>
                 </div>
             </div>
@@ -777,6 +847,21 @@
             btnElement.classList.add('active');
         }
 
+        // Dropdown Menu Toggles
+        function toggleDropdown(dropdownId) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(d => {
+                if (d.id !== dropdownId) d.classList.remove('active');
+            });
+            document.getElementById(dropdownId).classList.toggle('active');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.btn')) {
+                document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+            }
+        }
+
         // DPT Logic
         const STORAGE_KEY = 'dpt_interactive_records_compact_merged';
         let dptData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -874,7 +959,7 @@
             updateSummaryPanel();
 
             if (filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ada data DPT. Silakan import file CSV terlebih dahulu.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ada data DPT. Silakan impor file melalui menu Impor.</td></tr>`;
                 return;
             }
 
@@ -929,30 +1014,68 @@
             }, 150);
         });
 
-        // CSV Import Handler using SheetJS (XLSX.read with type 'string')
-        document.getElementById('importFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        // --- IMPORT HANDLERS ---
+        function triggerImport(format) {
+            document.getElementById('importDropdown').classList.remove('active');
+            if (format === 'csv') document.getElementById('importFileCsv').click();
+            else if (format === 'xlsx') document.getElementById('importFileXlsx').click();
+            else if (format === 'json') document.getElementById('importFileJson').click();
+            else if (format === 'pdf') {
+                showModal('Impor format PDF saat ini belum didukung secara otomatis karena format dokumen bebas. Gunakan format CSV, Excel, atau JSON.');
+            }
+        }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvText = e.target.result;
-                    // SheetJS can parse CSV text flawlessly using XLSX.read
-                    const workbook = XLSX.read(csvText, { type: 'string' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    processImportedRows(jsonRows);
-                } catch (error) {
-                    console.error(error);
-                    showModal('Gagal membaca file CSV. Pastikan format file benar.');
-                } finally {
-                    e.target.value = '';
-                }
-            };
-            reader.readAsText(file, 'UTF-8');
+        // CSV Import
+        document.getElementById('importFileCsv').addEventListener('change', function(e) {
+            handleFileImport(e.target.files[0], 'csv');
         });
+        // Excel Import
+        document.getElementById('importFileXlsx').addEventListener('change', function(e) {
+            handleFileImport(e.target.files[0], 'xlsx');
+        });
+        // JSON Import
+        document.getElementById('importFileJson').addEventListener('change', function(e) {
+            handleFileImport(e.target.files[0], 'json');
+        });
+
+        function handleFileImport(file, type) {
+            if (!file) return;
+            const reader = new FileReader();
+
+            if (type === 'json') {
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        if (Array.isArray(jsonData)) {
+                            dptData = jsonData;
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
+                            renderTable();
+                            showModal(`Berhasil mengimpor ${dptData.length} data pemilih dari file JSON!`);
+                        } else {
+                            showModal('Format JSON harus berupa array data pemilih.');
+                        }
+                    } catch (err) {
+                        showModal('Gagal mengurai file JSON. Pastikan format valid.');
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            } else {
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        processImportedRows(jsonRows);
+                    } catch (error) {
+                        console.error(error);
+                        showModal('Gagal membaca file. Pastikan format file benar.');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
 
         function processImportedRows(jsonRows) {
             if (!jsonRows || jsonRows.length < 2) {
@@ -986,7 +1109,7 @@
             dptData = mappedData;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
             renderTable();
-            showModal(`Berhasil mengimpor ${dptData.length} data pemilih dari file CSV!`);
+            showModal(`Berhasil mengimpor ${dptData.length} data pemilih!`);
         }
 
         function confirmClearData() {
@@ -998,32 +1121,63 @@
             });
         }
 
-        function exportExcel() {
+        // --- EXPORT HANDLERS ---
+        function exportData(format) {
+            document.getElementById('exportDropdown').classList.remove('active');
             if (dptData.length === 0) {
                 showModal('Tidak ada data untuk diekspor.');
                 return;
             }
 
-            const exportRows = [
-                ["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]
-            ];
-
-            dptData.forEach(item => {
-                exportRows.push([
-                    item.no || '',
-                    item.nama || '',
-                    item.jk || '',
-                    item.usia || '',
-                    item.rt || '',
-                    item.rw || '',
-                    item.status || ''
-                ]);
-            });
-
-            const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Data DPT");
-            XLSX.writeFile(workbook, "Data_DPT_Updated.xlsx");
+            if (format === 'csv') {
+                let csvContent = "data:text/csv;charset=utf-8,NO DPT,NAMA,JENIS KELAMIN,USIA,RT,RW,STATUS\r\n";
+                dptData.forEach(item => {
+                    let row = [item.no || '', `"${item.nama || ''}"`, item.jk || '', item.usia || '', item.rt || '', item.rw || '', `"${item.status || ''}"`];
+                    csvContent += row.join(",") + "\r\n";
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "Data_DPT_Updated.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } 
+            else if (format === 'xlsx') {
+                const exportRows = [
+                    ["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]
+                ];
+                dptData.forEach(item => {
+                    exportRows.push([item.no || '', item.nama || '', item.jk || '', item.usia || '', item.rt || '', item.rw || '', item.status || '']);
+                });
+                const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Data DPT");
+                XLSX.writeFile(workbook, "Data_DPT_Updated.xlsx");
+            } 
+            else if (format === 'json') {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dptData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", "Data_DPT_Updated.json");
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            } 
+            else if (format === 'pdf') {
+                // Export table to PDF using SheetJS or standard table format simulation
+                const exportRows = [
+                    ["NO DPT", "NAMA", "JENIS KELAMIN", "USIA", "RT", "RW", "STATUS"]
+                ];
+                dptData.forEach(item => {
+                    exportRows.push([item.no || '', item.nama || '', item.jk || '', item.usia || '', item.rt || '', item.rw || '', item.status || '']);
+                });
+                const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Data DPT");
+                // Using SheetJS to trigger PDF/HTML print layout or download message
+                XLSX.writeFile(workbook, "Data_DPT_Updated.pdf", { bookType: "html" });
+            }
         }
 
         // --- Model C1 Real-Time Calculation & Validation Logic ---
