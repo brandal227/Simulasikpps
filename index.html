@@ -1214,7 +1214,7 @@
             if (!html5QrCode) {
                 html5QrCode = new Html5Qrcode("reader");
             }
-            const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+            const config = { fps: 10, qrbox: { width: 300, height: 300 } };
             html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
                 .catch(err => {
                     showModal("Gagal membuka kamera. Pastikan izin kamera diizinkan pada browser Anda.");
@@ -1242,15 +1242,36 @@
 
             if (matchedIndex !== -1) {
                 const target = dptData[matchedIndex];
+                const voterNoDpt = String(target.no || (matchedIndex + 1));
+
                 if (!isCheckedStatus(target.status)) {
                     target.status = '✔';
                     target.timestamp = new Date().toISOString();
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
                     updateSummaryPanel();
-                    resultDiv.innerHTML = `<span style="color: #28a745;">✔ Berhasil Absen!</span><br>No DPT: ${target.no || (matchedIndex+1)}<br>Nama: ${escapeHtml(target.nama)}<br>Waktu: ${formatTimestamp(target.timestamp)}`;
+                    resultDiv.innerHTML = `<span style="color: #28a745;">✔ Berhasil Absen!</span><br>No DPT: ${voterNoDpt}<br>Nama: ${escapeHtml(target.nama)}<br>Waktu: ${formatTimestamp(target.timestamp)}`;
                 } else {
                     resultDiv.innerHTML = `<span style="color: #d97706;">⚠ Pemilih sudah tercatat sebelumnya!</span><br>Nama: ${escapeHtml(target.nama)}<br>Waktu: ${formatTimestamp(target.timestamp)}`;
                 }
+
+                // Langsung arahkan ke baris data yang terscan & tercentang otomatis di Tab DPT
+                setTimeout(() => {
+                    stopScanner(); // Matikan kamera agar tidak scan berulang terus menerus
+                    
+                    // Pindahkan aktif tab ke 'dpt'
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+                    document.getElementById('tab-dpt').classList.add('active');
+                    // Cari tombol navigasi tab DPT pertama untuk diberikan class active
+                    const dptTabBtn = document.querySelector('.bottom-nav .nav-tab');
+                    if (dptTabBtn) dptTabBtn.classList.add('active');
+
+                    // Set input pencarian dengan No DPT pemilih tersebut agar tabel memfilter & menyorot barisnya
+                    const searchInput = document.getElementById('searchInput');
+                    searchInput.value = voterNoDpt;
+                    renderTable(voterNoDpt);
+                }, 800); // Jeda singkat 0.8 detik agar pesan hasil scan sempat terbaca di layar
+
             } else {
                 resultDiv.innerHTML = `<span style="color: #dc3545;">✖ Data dengan teks/kode "${escapeHtml(query)}" tidak ditemukan dalam DPT!</span>`;
             }
