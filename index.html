@@ -1426,6 +1426,29 @@
             // Abaikan error frame kosong
         }
 
+        const COL_STORAGE_KEY = 'dpt_hidden_columns_preferences_2026';
+
+        function loadColumnPreferences() {
+            const savedCols = JSON.parse(localStorage.getItem(COL_STORAGE_KEY));
+            if (savedCols) {
+                document.querySelectorAll('.col-toggle-chk').forEach(chk => {
+                    const colClass = chk.getAttribute('data-col-class');
+                    if (savedCols[colClass] !== undefined) {
+                        chk.checked = savedCols[colClass];
+                    }
+                });
+            }
+        }
+
+        function saveColumnPreferences() {
+            const colPrefs = {};
+            document.querySelectorAll('.col-toggle-chk').forEach(chk => {
+                const colClass = chk.getAttribute('data-col-class');
+                colPrefs[colClass] = chk.checked;
+            });
+            localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(colPrefs));
+        }
+
         function applyColumnVisibilityStates() {
             document.querySelectorAll('.col-toggle-chk').forEach(chk => {
                 const colClass = chk.getAttribute('data-col-class');
@@ -1438,8 +1461,14 @@
         }
 
         document.querySelectorAll('.col-toggle-chk').forEach(chk => {
-            chk.addEventListener('change', () => applyColumnVisibilityStates());
+            chk.addEventListener('change', () => {
+                applyColumnVisibilityStates();
+                saveColumnPreferences();
+            });
         });
+
+        // Muat preferensi kolom tersimpan saat halaman dimuat
+        loadColumnPreferences();
 
         function escapeHtml(text) {
             if (text === undefined || text === null) return '';
