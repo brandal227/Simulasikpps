@@ -1383,8 +1383,10 @@
                     target.status = '✔';
                     target.timestamp = new Date().toISOString();
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(dptData));
-                    updateSummaryPanel();
                 }
+
+                // PERBAIKAN UTAMA: Memanggil renderTable() agar tabel dan matriks langsung terupdate otomatis
+                renderTable(document.getElementById('searchInput').value);
 
                 const checkTime = formatTimestamp(target.timestamp);
                 resultDiv.innerHTML = `<span style="color: #28a745;">✔ Scan Sukses!</span><br>No DPT: ${voterNoDpt}<br>Nama: ${voterName}<br>Waktu: ${checkTime}`;
