@@ -1401,26 +1401,26 @@
                 
                 // PERBAIKAN: Menggunakan tabel dengan white-space nowrap agar titik dua sejajar dan tidak turun ke bawah
                 const popupMsg = `
-                    ${popupTitle}<br><br>
-                    <table style="width: 100%; font-size: 15px; text-align: left; border-collapse: collapse;">
-                <tr>
-                 <td style="width: 90px; white-space: nowrap;">NO DPT</td>
-                 <td style="width: 10px; font-weight: bold;">:</td>
-                 <td style="font-weight: bold; white-space: nowrap;">${voterNoDpt}</td>
-               </tr>
-                <tr>
-                  <td style="white-space: nowrap;">NAMA</td>
-                  <td style="font-weight: bold;">:</td>
-                 <td style="font-weight: bold; white-space: nowrap;">${voterName}</td>
+    ${popupTitle}<br><br>
+    <table style="width: 100%; font-size: 15px; text-align: left; border-collapse: collapse;">
+        <tr>
+            <td style="width: 90px; white-space: nowrap;">NO DPT</td>
+            <td style="width: 10px;">:</td>
+            <td style="font-weight: bold; white-space: nowrap;">${voterNoDpt}</td>
+        </tr>
+        <tr>
+            <td style="white-space: nowrap;">NAMA</td>
+            <td>:</td>
+            <td style="font-weight: bold; white-space: nowrap;">${voterName}</td>
         </tr>
         <tr>
             <td style="white-space: nowrap;">NIK</td>
-            <td style="font-weight: bold;">:</td>
+            <td>:</td>
             <td style="font-weight: bold; white-space: nowrap;">${voterNik}</td>
         </tr>
         <tr>
             <td style="white-space: nowrap;">WAKTU HADIR</td>
-            <td style="font-weight: bold;">:</td>
+            <td>:</td>
             <td style="font-weight: bold; white-space: nowrap;">${checkTime}</td>
         </tr>
     </table>
