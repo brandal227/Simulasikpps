@@ -1398,13 +1398,31 @@
                 const popupTitle = isAlreadyChecked 
                     ? '<strong style="color: #ffffff; font-size: 13px;">⚠ PERHATIAN: DATA SUDAH TERCATAT SEBELUMNYA</strong>' 
                     : '<strong style="color: #166534;">✔ SCAN KODE BERHASIL & DICATAT</strong>';
-                
+
                 const popupMsg = `
                     ${popupTitle}<br><br>
-                    <b>NO DPT:</b> ${voterNoDpt}<br>
-                    <b>NAMA:</b> ${voterName}<br>
-                    <b>NIK:</b> ${voterNik}<br>
-                    <b>WAKTU HADIR:</b> ${checkTime}
+                    <div style="display: flex; flex-direction: column; gap: 3px; text-align: left;">
+                        <div style="display: flex;">
+                            <span style="width: 100px; font-weight: bold;">NO DPT</span>
+                            <span style="width: 15px; font-weight: bold;">:</span>
+                            <span style="flex: 1;">${voterNoDpt}</span>
+                        </div>
+                        <div style="display: flex;">
+                            <span style="width: 100px; font-weight: bold;">NAMA</span>
+                            <span style="width: 15px; font-weight: bold;">:</span>
+                            <span style="flex: 1;">${voterName}</span>
+                        </div>
+                        <div style="display: flex;">
+                            <span style="width: 100px; font-weight: bold;">NIK</span>
+                            <span style="width: 15px; font-weight: bold;">:</span>
+                            <span style="flex: 1;">${voterNik}</span>
+                        </div>
+                        <div style="display: flex;">
+                            <span style="width: 100px; font-weight: bold;">WAKTU HADIR</span>
+                            <span style="width: 15px; font-weight: bold;">:</span>
+                            <span style="flex: 1;">${checkTime}</span>
+                        </div>
+                    </div>
                 `;
                 
                 const customActions = `
